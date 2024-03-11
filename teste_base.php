@@ -23,13 +23,16 @@ function ativacao() {
         if (!is_wp_error($resposta) && wp_remote_retrieve_response_code($resposta) == 200) {
             $dados_servicos = json_decode(wp_remote_retrieve_body($resposta), true)["resposta"];
 
-            $etapas = array();
+            $etapas = array(); // Mova a inicialização da variável para dentro deste loop
+
             foreach ($dados_servico["etapas"] as $indice => $etapa) {
+                $canal_descricao = isset($etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao']) ? $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao'] : '';
+
                 $etapas[] = array(
-                    'titulo' =>($indice + 1) . '.' . $etapa["titulo"],
+                    'titulo' => ($indice + 1) . '.' . $etapa["titulo"],
                     'descricao' => $etapa["descricao"],
                     'canaisDePrestacao' => array(
-                        'descricao' => $etapa["canaisDePrestacao"]["canaisDePrestacao"][0]["descricao"]
+                        'descricao' => $canal_descricao
                     )
                 );
             }
@@ -54,6 +57,12 @@ function ativacao() {
                         'negativeAva' => $dados_servico['avaliacoes']['negativas'],
                         'requester' => $dados_servico['solicitantes']['solicitante'][0]['tipo'],
                         'etapas' => $etapas,
+                        'tempoTotalEstimado' => $dados_servico['tempoTotalEstimado'],
+                        'nameOrgan' => $dados_servico['orgao']['nomeOrgao'],
+                        'linkOrgan' => $dados_servico['orgao']['id'],
+                        'noRequireTreatment' => $dados_servico['tratamentoDispensadoAtendimento'],
+                        'priorityTreatment' => $dados_servico['tratamentoPrioritario'],
+                        'acessibilityCondition' => $dados_servico['condicoesAcessibilidade'],
                     )
                     
                 ));
@@ -65,6 +74,8 @@ function ativacao() {
                 $meta_negative_ava = get_post_meta($post_id, 'negativeAva', true);
                 $meta_positive_ava = get_post_meta($post_id, 'positiveAva', true);
 
+                $meta_all_time = get_post_meta($post_id, 'tempoTotalEstimado', true);
+
                 $data_atual = date('d/m/Y');
                 $meta_all_available = $meta_negative_ava + $meta_positive_ava;
                 $categories = "$meta_name_first_category\n $meta_name_second_category > $meta_name_current_category";
@@ -75,14 +86,28 @@ function ativacao() {
                 $meta_percentual = get_post_meta($post_id, 'percentPositiveAva', true);
                 $meta_description = get_post_meta($post_id, 'description', true);
                 $meta_requester = get_post_meta($post_id, 'requester', true);
+                $meta_all_time_max = $meta_all_time['ate']['max'];
+                $meta_all_time_uni = $meta_all_time['ate']['unidade'];
+                $meta_name_organ = get_post_meta($post_id, 'nameOrgan', true);
+                $meta_link_organ = get_post_meta($post_id, 'linkOrgan', true);
+                $no_require_treatment = get_post_meta($post_id, 'noRequireTreatment', true);
+                $priority_treatment = get_post_meta($post_id, 'priorityTreatment', true);
+                $acessibility_condition = get_post_meta($post_id, 'acessibilityCondition', true);
 
-                $etapas_content = "";
+                $etapas_content = '';
+
                 foreach ($etapas as $etapa) {
                     $etapas_content .= sprintf(
-                        "%s\n%s\n%s\n",
+                        "%s\n%s\nCANAIS DE PRESTAÇÃO\n\n   %s : \n   %s\n\nDOCUMENTAÇÃO\n\n%s\n\nCUSTOS\n\n%s\nTEMPO DE DURAÇÃO DA ETAPA\n\n%s\n\n",
                         $etapa['titulo'],
                         $etapa['descricao'],
-                        $etapa['canaisDePrestacao']['descricao']
+                        $etapa['canaisDePrestacao']['descricao'],
+                        $etapa['canaisDePrestacao']['descricao'],
+                        // Adapte conforme a estrutura real dos documentos
+                        implode("\n", $etapa['documentos']['documentos']),
+                        // Adapte conforme a estrutura real dos custos
+                        implode("\n", $etapa['custos']['custos']),
+                        $etapa['tempoEstimadoPeriodoService']
                     );
                 }
 
@@ -107,8 +132,19 @@ function ativacao() {
                     $meta_requester\n
                     Etapas para realização deste serviço\n
                     $etapas_content\n
-                    $meta_contato 
-                    Link do Serviço: $meta_link_servico
+                    Outras Informações\n
+                    Quanto tempo leva?
+                    $meta_all_time_max $meta_all_time_uni\n
+                    Informações adicionais ao tempo estimado\n
+                    Para mais informações ou dúvidas sobre este serviço, entre em contato
+                    $meta_contato\n
+                    Este é um serviço do(a) $meta_name_organ. Em caso de duvidas, reclamações ou sugestões, favor, contactá-lo: $meta_link_organ\n
+                    Tratamento a ser dispensado ao usuário no atendimento
+                    $no_require_treatment\n
+                    Informações sobre as condições de acessibilidade, sinalização, limpeza e conforto dos locais de atendimento
+                    $acessibility_condition\n
+                    Informação sobre quem tem direito a tratamento prioritário
+                    $priority_treatment\n
                 ";
                 wp_update_post(array('ID' => $post_id, 'post_content' => $post_content));
             }
