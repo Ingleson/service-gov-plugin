@@ -22,6 +22,17 @@ function ativacao() {
     
         if (!is_wp_error($resposta) && wp_remote_retrieve_response_code($resposta) == 200) {
             $dados_servicos = json_decode(wp_remote_retrieve_body($resposta), true)["resposta"];
+
+            $etapas = array();
+            foreach ($dados_servico["etapas"] as $indice => $etapa) {
+                $etapas[] = array(
+                    'titulo' =>($indice + 1) . '.' . $etapa["titulo"],
+                    'descricao' => $etapa["descricao"],
+                    'canaisDePrestacao' => array(
+                        'descricao' => $etapa["canaisDePrestacao"]["canaisDePrestacao"][0]["descricao"]
+                    )
+                );
+            }
     
             foreach ($dados_servicos as $dados_servico) {
                 $post_id = wp_insert_post(array(
@@ -41,7 +52,8 @@ function ativacao() {
                         'percentPositiveAva' => $dados_servico['percentualAvaliacoesPositivas'],
                         'positiveAva' => $dados_servico['avaliacoes']['positivas'],
                         'negativeAva' => $dados_servico['avaliacoes']['negativas'],
-                        'requester' => $dados_servico['solicitantes']['solicitante'][0]['tipo']
+                        'requester' => $dados_servico['solicitantes']['solicitante'][0]['tipo'],
+                        'etapas' => $etapas,
                     )
                     
                 ));
@@ -52,7 +64,6 @@ function ativacao() {
                 
                 $meta_negative_ava = get_post_meta($post_id, 'negativeAva', true);
                 $meta_positive_ava = get_post_meta($post_id, 'positiveAva', true);
-
 
                 $data_atual = date('d/m/Y');
                 $meta_all_available = $meta_negative_ava + $meta_positive_ava;
@@ -65,26 +76,38 @@ function ativacao() {
                 $meta_description = get_post_meta($post_id, 'description', true);
                 $meta_requester = get_post_meta($post_id, 'requester', true);
 
+                $etapas_content = "";
+                foreach ($etapas as $etapa) {
+                    $etapas_content .= sprintf(
+                        "%s\n%s\n%s\n",
+                        $etapa['titulo'],
+                        $etapa['descricao'],
+                        $etapa['canaisDePrestacao']['descricao']
+                    );
+                }
+
 
                 if(strlen($meta_sigla
                 ) < 1) {
-                    $meta_sigla = 'Sem Sigla';
+                    $meta_sigla = '';
                 }
                 if(strlen($meta_contato) <1) {
-                    $meta_contato = 'Sem Contato';
+                    $meta_contato = '';
                 }
                 
                 // $categories\n 
 
                 $post_content = "
-                    $meta_sigla\n 
-                    Avaliações positivas: $meta_percentual% . ($meta_all_available)\n
+                    $meta_sigla
+                    Avaliações: $meta_percentual% ($meta_all_available)
                     Última Modificação: $data_atual\n
                     O que é?\n
                     $meta_description\n
                     Quem pode utilizar este serviço?\n
-                    $meta_requester
-                    Contato: $meta_contato\n 
+                    $meta_requester\n
+                    Etapas para realização deste serviço\n
+                    $etapas_content\n
+                    $meta_contato 
                     Link do Serviço: $meta_link_servico
                 ";
                 wp_update_post(array('ID' => $post_id, 'post_content' => $post_content));
