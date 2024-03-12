@@ -22,27 +22,34 @@ function ativacao() {
     
         if (!is_wp_error($resposta) && wp_remote_retrieve_response_code($resposta) == 200) {
             $dados_servicos = json_decode(wp_remote_retrieve_body($resposta), true)["resposta"];
-    
-            foreach ($dados_servicos as $dados_servico) {
 
+            
+            foreach ($dados_servicos as $dados_servico) {
+                
                 $etapas = array();
 
-                foreach ($dados_servico["etapas"] as $indice => $etapa) {
-            
-                    $etapas[] = array(
-                        'titulo' => ($indice + 1) . '.' . $etapa["titulo"],
-                        'descricao' => $etapa["descricao"],
-                        'canaisDePrestacao' => array(
-                            'descricao' => $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao']
-                        ),
-                        'documentos' => array(
-                            'documentos' => $etapa['documentos']['documentos']
-                        ),
-                        'custos' => array(
-                            'custos' => $etapa['custos']['custos']
-                        ),
-                        'tempoTotalEstimado' => $etapa['tempoTotalEstimado']
-                    );
+                if (isset($dados_servico["etapas"]) && is_array($dados_servico["etapas"])) {
+                    foreach ($dados_servico["etapas"] as $indice => $etapa) {
+                        $canal_descricao = isset($etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao']) ? $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao'] : '';
+
+                        $documentos = isset($etapa['documentos']['documentos']) ? $etapa['documentos']['documentos'] : array();
+                        $custos = isset($etapa['custos']['custos']) ? $etapa['custos']['custos'] : array();
+
+                        $etapas[] = array(
+                            'titulo' => ($indice + 1) . '.' . $etapa["titulo"],
+                            'descricao' => $etapa["descricao"],
+                            'canaisDePrestacao' => array(
+                                'descricao' => $canal_descricao
+                            ),
+                            'documentos' => array(
+                                'documentos' => $documentos
+                            ),
+                            'custos' => array(
+                                'custos' => $custos
+                            ),
+                            'tempoTotalEstimado' => $etapa['tempoTotalEstimado']
+                        );
+                    }
                 }
 
                 $nome_categoria = $dados_servico['categoria']['nomeCategoria'];
@@ -110,17 +117,19 @@ function ativacao() {
                 $etapas_content = '';
 
                 foreach ($etapas as $etapa) {
+                    $canais_descricao = isset($etapa['canaisDePrestacao']['descricao']) ? $etapa['canaisDePrestacao']['descricao'] : '';
+                    $documentos = isset($etapa['documentos']['documentos']) ? $etapa['documentos']['documentos'] : array();
+                    $custos = isset($etapa['custos']['custos']) ? $etapa['custos']['custos'] : array();
+                
                     $etapas_content .= sprintf(
-                        "%s\n%s\nCANAIS DE PRESTAÇÃO\n\n   %s : \n   %s\n\nDOCUMENTAÇÃO\n\n%s\n\nCUSTOS\n\n%s\nTEMPO DE DURAÇÃO DA ETAPA\n\n%s\n\n",
+                        "%s\n%s\nCANAIS DE PRESTAÇÃO\n\n   %s\n\nDOCUMENTAÇÃO\n\n   %s\n\nCUSTOS\n\n   %s\nTEMPO DE DURAÇÃO DA ETAPA\n\n%s %s\n\n",
                         $etapa['titulo'],
                         $etapa['descricao'],
-                        $etapa['canaisDePrestacao']['descricao'],
-                        $etapa['canaisDePrestacao']['descricao'],
-                        // Adapte conforme a estrutura real dos documentos
-                        implode("\n", $etapa['documentos']['documentos']),
-                        // Adapte conforme a estrutura real dos custos
-                        implode("\n", $etapa['custos']['custos']),
-                        $etapa['tempoEstimadoPeriodoService']
+                        $canais_descricao,
+                        implode("\n", $documentos),
+                        implode("\n", $custos),
+                        $etapa['tempoTotalEstimado']['ate']['max'],
+                        $etapa['tempoTotalEstimado']['ate']['unidade']
                     );
                 }
 
