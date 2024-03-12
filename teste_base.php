@@ -5,7 +5,7 @@ register_activation_hook(__FILE__, 'ativacao');
 /*
 Plugin Name: Serviços de Orgãos do Governo
 Description: Cria Posts utilizando api do Governo e uma lista dos orgãos do mesmo.
-Version: 1.0
+Version: Beta
 Author: Ingleson
 */
 
@@ -38,11 +38,20 @@ function ativacao() {
             }
     
             foreach ($dados_servicos as $dados_servico) {
+
+                $nome_categoria = $dados_servico['categoria']['nomeCategoria'];
+
+                $categoria_id = get_cat_ID($nome_categoria);
+
+                if ($categoria_id == 0) {
+                    $categoria_id = wp_create_category($nome_categoria);
+                }
+
                 $post_id = wp_insert_post(array(
                     'post_title'   => $dados_servico["nome"],
                     'post_content' => $dados_servico["descricao"],
                     'post_status'  => 'publish',
-                    // 'category'     => $dados_servico['categoria']['nomeCategoria'],
+                    'post_category'=> array($categoria_id),
                     'meta_input'   => array(
                         'id'       => $dados_servico['id'],
                         'sigla'    => $dados_servico['sigla'],
