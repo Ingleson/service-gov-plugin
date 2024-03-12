@@ -22,22 +22,28 @@ function ativacao() {
     
         if (!is_wp_error($resposta) && wp_remote_retrieve_response_code($resposta) == 200) {
             $dados_servicos = json_decode(wp_remote_retrieve_body($resposta), true)["resposta"];
-
-            $etapas = array();
-
-            foreach ($dados_servicos["etapas"] as $indice => $etapa) {
-                $canal_descricao = isset($etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao']) ? $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao'] : '';
-
-                $etapas[] = array(
-                    'titulo' => ($indice + 1) . '.' . $etapa["titulo"],
-                    'descricao' => $etapa["descricao"],
-                    'canaisDePrestacao' => array(
-                        'descricao' => $canal_descricao
-                    )
-                );
-            }
     
             foreach ($dados_servicos as $dados_servico) {
+
+                $etapas = array();
+
+                foreach ($dados_servico["etapas"] as $indice => $etapa) {
+            
+                    $etapas[] = array(
+                        'titulo' => ($indice + 1) . '.' . $etapa["titulo"],
+                        'descricao' => $etapa["descricao"],
+                        'canaisDePrestacao' => array(
+                            'descricao' => $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao']
+                        ),
+                        'documentos' => array(
+                            'documentos' => $etapa['documentos']['documentos']
+                        ),
+                        'custos' => array(
+                            'custos' => $etapa['custos']['custos']
+                        ),
+                        'tempoTotalEstimado' => $etapa['tempoTotalEstimado']
+                    );
+                }
 
                 $nome_categoria = $dados_servico['categoria']['nomeCategoria'];
 
