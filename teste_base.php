@@ -23,9 +23,9 @@ function ativacao() {
         if (!is_wp_error($resposta) && wp_remote_retrieve_response_code($resposta) == 200) {
             $dados_servicos = json_decode(wp_remote_retrieve_body($resposta), true)["resposta"];
 
-            $etapas = array(); // Mova a inicialização da variável para dentro deste loop
+            $etapas = array();
 
-            foreach ($dados_servico["etapas"] as $indice => $etapa) {
+            foreach ($dados_servicos["etapas"] as $indice => $etapa) {
                 $canal_descricao = isset($etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao']) ? $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao'] : '';
 
                 $etapas[] = array(
@@ -88,10 +88,8 @@ function ativacao() {
                 $data_atual = date('d/m/Y');
                 $meta_all_available = $meta_negative_ava + $meta_positive_ava;
                 $categories = "$meta_name_first_category\n $meta_name_second_category > $meta_name_current_category";
-                // $meta_id = get_post_meta($post_id, 'id', true);
                 $meta_sigla = get_post_meta($post_id, 'sigla', true);
                 $meta_contato = get_post_meta($post_id, 'contato', true);
-                $meta_link_servico = get_post_meta($post_id, 'linkService', true);
                 $meta_percentual = get_post_meta($post_id, 'percentPositiveAva', true);
                 $meta_description = get_post_meta($post_id, 'description', true);
                 $meta_requester = get_post_meta($post_id, 'requester', true);
@@ -120,7 +118,6 @@ function ativacao() {
                     );
                 }
 
-
                 if(strlen($meta_sigla
                 ) < 1) {
                     $meta_sigla = '';
@@ -129,9 +126,8 @@ function ativacao() {
                     $meta_contato = '';
                 }
                 
-                // $categories\n 
-
                 $post_content = "
+                    $categories\n
                     $meta_sigla
                     Avaliações: $meta_percentual% ($meta_all_available)
                     Última Modificação: $data_atual\n
