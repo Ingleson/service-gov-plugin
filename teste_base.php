@@ -22,7 +22,6 @@ function ativacao() {
     
         if (!is_wp_error($resposta) && wp_remote_retrieve_response_code($resposta) == 200) {
             $dados_servicos = json_decode(wp_remote_retrieve_body($resposta), true)["resposta"];
-
             
             foreach ($dados_servicos as $dados_servico) {
                 
@@ -30,7 +29,6 @@ function ativacao() {
 
                 if (isset($dados_servico["etapas"]) && is_array($dados_servico["etapas"])) {
                     foreach ($dados_servico["etapas"] as $indice => $etapa) {
-                        $canal_descricao = isset($etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao']) ? $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao'] : '';
 
                         $documentos = isset($etapa['documentos']['documentos']) ? $etapa['documentos']['documentos'] : array();
                         $custos = isset($etapa['custos']['custos']) ? $etapa['custos']['custos'] : array();
@@ -39,7 +37,8 @@ function ativacao() {
                             'titulo' => ($indice + 1) . '.' . $etapa["titulo"],
                             'descricao' => $etapa["descricao"],
                             'canaisDePrestacao' => array(
-                                'descricao' => $canal_descricao
+                                'tipo'      => $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['tipo'],
+                                'descricao' => $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao'],
                             ),
                             'documentos' => array(
                                 'documentos' => $documentos
@@ -67,6 +66,7 @@ function ativacao() {
                     'post_category'=> array($categoria_id),
                     'meta_input'   => array(
                         'id'       => $dados_servico['id'],
+                        'free'     => $dados_servico['gratuito'],
                         'sigla'    => $dados_servico['sigla'],
                         'contact'  => $dados_servico['contato'],
                         'description' => $dados_servico['descricao'],
@@ -98,16 +98,19 @@ function ativacao() {
 
                 $meta_all_time = get_post_meta($post_id, 'tempoTotalEstimado', true);
 
+                $meta_free = get_post_meta($post_id, 'free', true);
+
                 $data_atual = date('d/m/Y');
                 $meta_all_available = $meta_negative_ava + $meta_positive_ava;
                 $categories = "$meta_name_first_category\n $meta_name_second_category > $meta_name_current_category";
+                $is_free = '';
                 $meta_sigla = get_post_meta($post_id, 'sigla', true);
                 $meta_contato = get_post_meta($post_id, 'contato', true);
                 $meta_percentual = get_post_meta($post_id, 'percentPositiveAva', true);
                 $meta_description = get_post_meta($post_id, 'description', true);
                 $meta_requester = get_post_meta($post_id, 'requester', true);
-                $meta_all_time_max = $meta_all_time['ate']['max'];
-                $meta_all_time_uni = $meta_all_time['ate']['unidade'];
+                $meta_all_time_max = $meta_all_time['entre']['max'];
+                $meta_all_time_uni = $meta_all_time['entre']['unidade'];
                 $meta_name_organ = get_post_meta($post_id, 'nameOrgan', true);
                 $meta_link_organ = get_post_meta($post_id, 'linkOrgan', true);
                 $no_require_treatment = get_post_meta($post_id, 'noRequireTreatment', true);
@@ -118,16 +121,32 @@ function ativacao() {
 
                 foreach ($etapas as $etapa) {
                     $canais_descricao = isset($etapa['canaisDePrestacao']['descricao']) ? $etapa['canaisDePrestacao']['descricao'] : '';
-                    $documentos = isset($etapa['documentos']['documentos']) ? $etapa['documentos']['documentos'] : array();
-                    $custos = isset($etapa['custos']['custos']) ? $etapa['custos']['custos'] : array();
+                    $tipo = isset($etapa['canaisDePrestacao']['tipo']) ? $etapa['canaisDePrestacao']['tipo'] : '';
+                    $documentos = isset($etapa['documentos']['documentos']) ? $etapa['documentos']['documentos'] : '';
+                    $custos = isset($etapa['custos']['custos']) ? $etapa['custos']['custos'] : '';
+
+                    $documentos_content = '';
+                    $custos_content = '';
+
+                    foreach ($documentos as $documento) {
+                        $current_document = $documento['nome'];
+                        $documentos_content .= "- $current_document\n";
+                    }
+                    foreach ($custos as $custo) {
+                        $description_cost = $custo['descricao'];
+                        $type_cost = $custo['moeda'];
+                        $value_cost = $custo['valor'];
+                        $custos_content .= "- $description_cost\n $type_cost$value_cost";
+                    }
                 
                     $etapas_content .= sprintf(
-                        "%s\n%s\nCANAIS DE PRESTAÇÃO\n\n   %s\n\nDOCUMENTAÇÃO\n\n   %s\n\nCUSTOS\n\n   %s\nTEMPO DE DURAÇÃO DA ETAPA\n\n%s %s\n\n",
+                        "%s\n%s\nCANAIS DE PRESTAÇÃO\n\n   %s: %s\n\nDOCUMENTAÇÃO\n\n%s\n\nCUSTOS\n\n%s\nTEMPO DE DURAÇÃO DA ETAPA\n\n%s %s\n\n",
                         $etapa['titulo'],
                         $etapa['descricao'],
+                        $tipo,
                         $canais_descricao,
-                        implode("\n", $documentos),
-                        implode("\n", $custos),
+                        $documentos_content,
+                        $custos_content,
                         $etapa['tempoTotalEstimado']['ate']['max'],
                         $etapa['tempoTotalEstimado']['ate']['unidade']
                     );
@@ -139,6 +158,16 @@ function ativacao() {
                 }
                 if(strlen($meta_contato) <1) {
                     $meta_contato = '';
+                }
+                if($meta_all_available == 0) {
+                    $meta_percentual = '';
+                }
+                if($meta_all_time_max == null) {
+                    $meta_all_time_max = '';
+                    $meta_all_time_uni = '';
+                }
+                if($meta_free == true) {
+                    $is_free = 'Este serviço é gratuito para o cidadão.';
                 }
                 
                 $post_content = "
@@ -156,6 +185,8 @@ function ativacao() {
                     Quanto tempo leva?
                     $meta_all_time_max $meta_all_time_uni\n
                     Informações adicionais ao tempo estimado\n
+                    Caso o serviço esteja fora do ar, o cidadão poderá contatar diretamente a área para saber sobre as etapas de sua solicitação.\n
+                    $is_free\n
                     Para mais informações ou dúvidas sobre este serviço, entre em contato
                     $meta_contato\n
                     Este é um serviço do(a) $meta_name_organ. Em caso de duvidas, reclamações ou sugestões, favor, contactá-lo: $meta_link_organ\n
