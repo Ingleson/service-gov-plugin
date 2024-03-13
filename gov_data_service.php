@@ -315,17 +315,31 @@ function ativacao() {
 
                     foreach ($documentos as $documento) {
                         $current_document = $documento['nome'];
-                        $documentos_content .= "- $current_document\n";
+                        $documentos_content .= "<li>$current_document</li>";
                     }
                     foreach ($custos as $custo) {
                         $description_cost = $custo['descricao'];
                         $type_cost = $custo['moeda'];
                         $value_cost = $custo['valor'];
-                        $custos_content .= "- $description_cost\n $type_cost$value_cost";
+                        $custos_content .= "<li>$description_cost - $type_cost $value_cost</li>";
                     }
                 
                     $etapas_content .= sprintf(
-                        "%s\n%s\nCANAIS DE PRESTAÇÃO\n\n   %s: %s\n\nDOCUMENTAÇÃO\n\n%s\n\nCUSTOS\n\n%s\nTEMPO DE DURAÇÃO DA ETAPA\n\n%s %s\n\n",
+                        "<div class='etapa'>
+                            <h3>%s</h3>
+                            <p>%s</p>
+                            <h4>CANAIS DE PRESTAÇÃO</h4>
+                            <ul>
+                                <li>Tipo: %s</li>
+                                <li>Descrição: %s</li>
+                            </ul>
+                            <h4>DOCUMENTAÇÃO</h4>
+                            <ul>%s</ul>
+                            <h4>CUSTOS</h4>
+                            <ul>%s</ul>
+                            <h4>TEMPO DE DURAÇÃO DA ETAPA</h4>
+                            <p>%s %s</p>
+                        </div>",
                         $etapa['titulo'],
                         $etapa['descricao'],
                         $tipo,
@@ -360,7 +374,7 @@ function ativacao() {
                         <h3 class='all-categories'>$categories</h3>
                         <span class='acronym'>$meta_sigla</span>
                         <span class='percent'>Avaliações: $meta_percentual%</span>
-                        <span class='last-modify'>$data_atual</span>
+                        <span class='last-modify'>Última Modificação: $data_atual</span>
 
                         <h4 class='sub'>O que é</h4>
                         <p class='meta-desc'>$meta_description</p>
