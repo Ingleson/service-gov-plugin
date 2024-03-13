@@ -326,18 +326,18 @@ function ativacao() {
                 
                     $etapas_content .= sprintf(
                         "<div class='etapa'>
-                            <h3>%s</h3>
+                            <h5>%s</h5>
                             <p>%s</p>
-                            <h4>CANAIS DE PRESTAÇÃO</h4>
+                            <h5>CANAIS DE PRESTAÇÃO</h5>
                             <ul>
                                 <li>Tipo: %s</li>
                                 <li>Descrição: %s</li>
                             </ul>
-                            <h4>DOCUMENTAÇÃO</h4>
+                            <h5>DOCUMENTAÇÃO</h5>
                             <ul>%s</ul>
-                            <h4>CUSTOS</h4>
+                            <h5>CUSTOS</h5>
                             <ul>%s</ul>
-                            <h4>TEMPO DE DURAÇÃO DA ETAPA</h4>
+                            <h5>TEMPO DE DURAÇÃO DA ETAPA</h5>
                             <p>%s %s</p>
                         </div>",
                         $etapa['titulo'],
@@ -373,7 +373,7 @@ function ativacao() {
                     <div class='all-content'>
                         <h3 class='all-categories'>$categories</h3>
                         <span class='acronym'>$meta_sigla</span>
-                        <span class='percent'>Avaliações: $meta_percentual%</span>
+                        <span class='percent'>Avaliações: $meta_percentual% ($meta_all_available)</span>
                         <span class='last-modify'>Última Modificação: $data_atual</span>
 
                         <h4 class='sub'>O que é</h4>
