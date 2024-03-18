@@ -3,9 +3,9 @@
 register_activation_hook(__FILE__, 'ativacao');
 
 /*
-Plugin Name: Serviços de Orgãos do Governo
-Description: Cria Posts utilizando api do Governo e uma lista dos orgãos do mesmo.
-Version: 1.0
+Plugin Name: Serviços do Governo
+Description: Cria Posts utilizando api do Governo e uma lista dos orgãos do mesmo (aproximadamente 2h de espera).
+Version: 1.1
 Author: Ingleson
 */
 
@@ -198,13 +198,25 @@ function ativacao() {
         458,
         454,
     );
+    $length = 3;
+
+    $capacity = array_chunk($lista_cod_siorgs, $length);
+
+    foreach ($capacity as $indices => $batch) {
+        $delay = $indices * 2 * MINUTE_IN_SECONDS;
+
+        wp_schedule_single_event(time() + $delay, 'process_batch_event', array($batch));
+    }
+}
+
+function process_batch_scheduled($batch_siorg) {
     $url_base = "https://www.servicos.gov.br/api/v1/servicos/orgao/";
-    
-    foreach ($lista_cod_siorgs as $cod_siorg) {
+
+    foreach ($batch_siorg as $cod_siorg) {
         $url_completa = $url_base . $cod_siorg;
-    
+
         $resposta = wp_remote_get($url_completa);
-    
+
         if (!is_wp_error($resposta) && wp_remote_retrieve_response_code($resposta) == 200) {
             $dados_servicos = json_decode(wp_remote_retrieve_body($resposta), true)["resposta"];
             
@@ -415,4 +427,6 @@ function ativacao() {
             }
         }
     }
-}
+};
+
+add_action('process_batch_event', 'process_batch_scheduled');

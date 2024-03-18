@@ -3,12 +3,17 @@
 register_activation_hook(__FILE__, 'ativacao');
 
 /*
-Plugin Name: Serviços de Orgãos do Governo
+Plugin Name: teste
 Description: Cria Posts utilizando api do Governo e uma lista dos orgãos do mesmo.
 Version: 1.0
 Author: Ingleson
 */
 
+function post_existe_por_titulo($titulo) {
+    global $wpdb;
+    $post_id = $wpdb->get_var($wpdb->prepare("SELECT ID FROM $wpdb->posts WHERE post_title = %s AND post_type = 'post'", $titulo));
+    return $post_id;
+}
 function ativacao() {
     $lista_cod_siorgs = array(
         46,
@@ -209,7 +214,12 @@ function ativacao() {
             $dados_servicos = json_decode(wp_remote_retrieve_body($resposta), true)["resposta"];
             
             foreach ($dados_servicos as $dados_servico) {
-                
+                $check_id = post_existe_por_titulo($dados_servico["nome"]);
+
+                if($check_id) {
+                    continue;
+                }
+
                 $etapas = array();
 
                 if (isset($dados_servico["etapas"]) && is_array($dados_servico["etapas"])) {
