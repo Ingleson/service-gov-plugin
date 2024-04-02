@@ -67,12 +67,10 @@ function perform_actions() {
                         $canais_descricao = isset($etapa['canaisDePrestacao']['descricao']) ? $etapa['canaisDePrestacao']['descricao'] : '';
                         $canais_descricao = replace_link($canais_descricao);
 
-                        $descricao = isset($etapa['descricao']) ? $etapa['descricao'] : '';
-                        $descricao = replace_link($descricao);
                     
                         $etapas[] = array(
                             'titulo' => ($indice + 1) . '.' . $etapa["titulo"],
-                            'descricao' => $descricao,
+                            'descricao' => $etapa['descricao'] ? $etapa['descricao'] : '',
                             'canaisDePrestacao' => array(
                                 'tipo'      => $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['tipo'],
                                 'descricao' => $canais_descricao,
