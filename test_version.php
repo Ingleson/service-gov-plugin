@@ -63,17 +63,13 @@ function perform_actions() {
 
                         $documentos = isset($etapa['documentos']['documentos']) ? $etapa['documentos']['documentos'] : array();
                         $custos = isset($etapa['custos']['custos']) ? $etapa['custos']['custos'] : array();
-                        
-                        $descricao = isset($etapa['canaisDePrestacao'][0]['descricao']) ? $etapa['canaisDePrestacao'][0]['descricao'] : '';
-                        $descricao = replace_link($descricao);
-
                     
                         $etapas[] = array(
                             'titulo' => ($indice + 1) . '.' . $etapa["titulo"],
                             'descricao' => $etapa['descricao'],
                             'canaisDePrestacao' => array(
                                 'tipo'      => $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['tipo'],
-                                'descricao' => $descricao,
+                                'descricao' => replace_link($etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao']),
                             ),
                             'documentos' => array(
                                 'documentos' => $documentos
