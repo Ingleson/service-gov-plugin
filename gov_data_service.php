@@ -2,8 +2,8 @@
 
 /*
 Plugin Name: Serviços de Orgãos do Governo
-Description: Cria Posts utilizando api do Governo e uma lista dos orgãos do mesmo.
-Version: 1.0
+Description: Cria Posts utilizando api do Governo e uma lista dos orgãos do mesmo que são atualizados semanalmente.
+Version: 1.3
 Author: Ingleson
 */
 
