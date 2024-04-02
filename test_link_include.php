@@ -3,17 +3,12 @@
 register_activation_hook(__FILE__, 'ativacao');
 
 /*
-Plugin Name: teste
-Description: Cria Posts utilizando api do Governo e uma lista dos orgãos do mesmo.
-Version: 1.0
+Plugin Name: Serviços do Governo
+Description: Cria Posts utilizando api do Governo e uma lista dos orgãos do mesmo (aproximadamente 2h de espera).
+Version: 1.1
 Author: Ingleson
 */
 
-function post_existe_por_titulo($titulo) {
-    global $wpdb;
-    $post_id = $wpdb->get_var($wpdb->prepare("SELECT ID FROM $wpdb->posts WHERE post_title = %s AND post_type = 'post'", $titulo));
-    return $post_id;
-}
 function ativacao() {
     $lista_cod_siorgs = array(
         46,
@@ -203,23 +198,30 @@ function ativacao() {
         458,
         454,
     );
+    $length = 3;
+
+    $capacity = array_chunk($lista_cod_siorgs, $length);
+
+    foreach ($capacity as $indices => $batch) {
+        $delay = $indices * 2 * MINUTE_IN_SECONDS;
+
+        wp_schedule_single_event(time() + $delay, 'process_batch_event', array($batch));
+    }
+}
+
+function process_batch_scheduled($batch_siorg) {
     $url_base = "https://www.servicos.gov.br/api/v1/servicos/orgao/";
-    
-    foreach ($lista_cod_siorgs as $cod_siorg) {
+
+    foreach ($batch_siorg as $cod_siorg) {
         $url_completa = $url_base . $cod_siorg;
-    
+
         $resposta = wp_remote_get($url_completa);
-    
+
         if (!is_wp_error($resposta) && wp_remote_retrieve_response_code($resposta) == 200) {
             $dados_servicos = json_decode(wp_remote_retrieve_body($resposta), true)["resposta"];
             
             foreach ($dados_servicos as $dados_servico) {
-                $check_id = post_existe_por_titulo($dados_servico["nome"]);
-
-                if($check_id) {
-                    continue;
-                }
-
+                
                 $etapas = array();
 
                 if (isset($dados_servico["etapas"]) && is_array($dados_servico["etapas"])) {
@@ -234,10 +236,10 @@ function ativacao() {
                                 $descricao = str_replace("[$link]", "<a href='$link' target='_blank'>$link</a>", $descricao);
                             }
                         }
-                        
+
                         $etapas[] = array(
                             'titulo' => ($indice + 1) . '.' . $etapa["titulo"],
-                            'descricao' => $etapa["descricao"],
+                            'descricao' => $descricao,
                             'canaisDePrestacao' => array(
                                 'tipo'      => $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['tipo'],
                                 'descricao' => $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao'],
@@ -432,4 +434,6 @@ function ativacao() {
             }
         }
     }
-}
+};
+
+add_action('process_batch_event', 'process_batch_scheduled');

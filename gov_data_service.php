@@ -1,7 +1,5 @@
 <?php
 
-register_activation_hook(__FILE__, 'ativacao');
-
 /*
 Plugin Name: Serviços de Orgãos do Governo
 Description: Cria Posts utilizando api do Governo e uma lista dos orgãos do mesmo.
@@ -9,7 +7,17 @@ Version: 1.0
 Author: Ingleson
 */
 
-function ativacao() {
+function is_week_passed($last_execution_time) {
+    $current_time = time();
+    $one_week_seconds = 604800;
+
+    if($current_time - $last_execution_time >= $one_week_seconds) {
+        return true;
+    } else {
+        return false;
+    }
+}
+function perform_actions() {
     $lista_cod_siorgs = array(
         46,
         4243,
@@ -209,6 +217,12 @@ function ativacao() {
             $dados_servicos = json_decode(wp_remote_retrieve_body($resposta), true)["resposta"];
             
             foreach ($dados_servicos as $dados_servico) {
+
+                $post_title = $dados_servico["nome"];
+                $post_exists = get_page_by_title($post_title, OBJECT, 'post');
+                if ($post_exists) {
+                    continue;
+                }
                 
                 $etapas = array();
 
@@ -217,10 +231,17 @@ function ativacao() {
 
                         $documentos = isset($etapa['documentos']['documentos']) ? $etapa['documentos']['documentos'] : array();
                         $custos = isset($etapa['custos']['custos']) ? $etapa['custos']['custos'] : array();
+                        $descricao = $etapa["descricao"];
+
+                        if (preg_match_all('/\[(.*?)\]/', $descricao, $matches)) {
+                            foreach ($matches[1] as $link) {
+                                $descricao = str_replace("[$link]", "<a href='$link' target='_blank'>[Acesse Aqui]</a>", $descricao);
+                            }
+                        }
 
                         $etapas[] = array(
                             'titulo' => ($indice + 1) . '.' . $etapa["titulo"],
-                            'descricao' => $etapa["descricao"],
+                            'descricao' => $descricao,
                             'canaisDePrestacao' => array(
                                 'tipo'      => $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['tipo'],
                                 'descricao' => $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao'],
@@ -415,4 +436,12 @@ function ativacao() {
             }
         }
     }
+}
+
+$last_execution_time = get_option('last_execution_time');
+
+if(!$last_execution_time || is_week_passed($last_execution_time)) {
+    perform_actions();
+
+    update_option('last_execution_time', time());
 }
