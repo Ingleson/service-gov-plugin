@@ -210,6 +210,16 @@ function ativacao() {
     }
 }
 
+function replace_link($description) {
+    $pattern = '/\[(.*?)\]\((.*?)\)/';
+
+    $description = preg_replace_callback($pattern, function($matches) {
+        return "<a href='{$matches[2]}'>{$matches[1]}</a>";
+    }, $description);
+
+    return $description;
+}
+
 function process_batch_scheduled($batch_siorg) {
     $url_base = "https://www.servicos.gov.br/api/v1/servicos/orgao/";
 
@@ -237,12 +247,15 @@ function process_batch_scheduled($batch_siorg) {
                         $documentos = isset($etapa['documentos']['documentos']) ? $etapa['documentos']['documentos'] : array();
                         $custos = isset($etapa['custos']['custos']) ? $etapa['custos']['custos'] : array();
 
+                        $canais_descricao = isset($etapa['canaisDePrestacao']['descricao']) ? $etapa['canaisDePrestacao']['descricao'] : '';
+                        $canais_descricao = replace_link($canais_descricao);
+
                         $etapas[] = array(
                             'titulo' => ($indice + 1) . '.' . $etapa["titulo"],
                             'descricao' => $etapa["descricao"],
                             'canaisDePrestacao' => array(
                                 'tipo'      => $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['tipo'],
-                                'descricao' => $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao'],
+                                'descricao' => $canais_descricao,
                             ),
                             'documentos' => array(
                                 'documentos' => $documentos
