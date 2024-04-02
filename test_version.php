@@ -22,7 +22,7 @@ function replace_link($description) {
     $pattern = '/\[(.*?)\]\((.*?)\)/';
 
     $description = preg_replace_callback($pattern, function($matches) {
-        return "<a href='{$matches[2]}'>{$matches[1]}</a>";
+        return "<a href='{$matches[2]}'>[{$matches[1]}]</a>";
     }, $description);
 
     return $description;
@@ -64,16 +64,16 @@ function perform_actions() {
                         $documentos = isset($etapa['documentos']['documentos']) ? $etapa['documentos']['documentos'] : array();
                         $custos = isset($etapa['custos']['custos']) ? $etapa['custos']['custos'] : array();
                         
-                        $canais_descricao = isset($etapa['canaisDePrestacao']['descricao']) ? $etapa['canaisDePrestacao']['descricao'] : '';
-                        $canais_descricao = replace_link($canais_descricao);
+                        $descricao = isset($etapa['canaisDePrestacao'][0]['descricao']) ? $etapa['canaisDePrestacao'][0]['descricao'] : '';
+                        $descricao = replace_link($canais_descricao);
 
                     
                         $etapas[] = array(
                             'titulo' => ($indice + 1) . '.' . $etapa["titulo"],
-                            'descricao' => $etapa['descricao'] ? $etapa['descricao'] : '',
+                            'descricao' => $etapa['descricao'],
                             'canaisDePrestacao' => array(
                                 'tipo'      => $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['tipo'],
-                                'descricao' => $canais_descricao,
+                                'descricao' => $descricao,
                             ),
                             'documentos' => array(
                                 'documentos' => $documentos
