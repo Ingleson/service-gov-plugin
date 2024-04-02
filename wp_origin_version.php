@@ -1,11 +1,12 @@
 <?php
 
 register_activation_hook(__FILE__, 'ativacao');
+add_action('cron_executar_ativacao_semanalmente', 'ativacao');
 
 /*
 Plugin Name: Serviços do Governo
-Description: Cria Posts utilizando api do Governo e uma lista dos orgãos do mesmo (aproximadamente 2h de espera).
-Version: 1.1
+Description: Cria Posts utilizando api do Governo e uma lista dos orgãos do mesmo (aproximadamente 2h de espera), atualização semanal sendo feita para verificar a existência de novos serviços.
+Version: 1.3
 Author: Ingleson
 */
 
@@ -221,6 +222,12 @@ function process_batch_scheduled($batch_siorg) {
             $dados_servicos = json_decode(wp_remote_retrieve_body($resposta), true)["resposta"];
             
             foreach ($dados_servicos as $dados_servico) {
+
+                $post_title = $dados_servico["nome"];
+                $post_exists = get_page_by_title($post_title, OBJECT, 'post');
+                if ($post_exists) {
+                    continue;
+                }
                 
                 $etapas = array();
 
@@ -430,3 +437,6 @@ function process_batch_scheduled($batch_siorg) {
 };
 
 add_action('process_batch_event', 'process_batch_scheduled');
+
+$timestamp = strtotime('next Monday');
+wp_schedule_single_event($timestamp, 'cron_executar_ativacao');
