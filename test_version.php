@@ -65,7 +65,7 @@ function perform_actions() {
                         $custos = isset($etapa['custos']['custos']) ? $etapa['custos']['custos'] : array();
                         
                         $descricao = isset($etapa['canaisDePrestacao'][0]['descricao']) ? $etapa['canaisDePrestacao'][0]['descricao'] : '';
-                        $descricao = replace_link($canais_descricao);
+                        $descricao = replace_link($descricao);
 
                     
                         $etapas[] = array(
