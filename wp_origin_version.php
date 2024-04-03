@@ -214,10 +214,28 @@ function replace_link($description) {
     $pattern = '/\[(.*?)\]\((.*?)\)/';
 
     $description = preg_replace_callback($pattern, function($matches) {
-        return "<a href='{$matches[2]}'>{$matches[1]}</a>";
+        return "<a href='{$matches[2]}'>[{$matches[1]}]</a>";
     }, $description);
 
+    if($description === null) {
+        return $description;
+    }
+
     return $description;
+}
+
+function make_links_clickable($text) {
+    $pattern = '/(https?:\/\/\S+)/i';
+
+    if (preg_match($pattern, $text)) {
+
+        $text = preg_replace_callback($pattern, function($matches) {
+            $url = esc_url($matches[0]);
+            return "<a href='$url'>$url</a>";
+        }, $text);
+    }
+
+    return $text;
 }
 
 function process_batch_scheduled($batch_siorg) {
@@ -249,7 +267,7 @@ function process_batch_scheduled($batch_siorg) {
 
                         $etapas[] = array(
                             'titulo' => ($indice + 1) . '.' . $etapa["titulo"],
-                            'descricao' => $etapa["descricao"],
+                            'descricao' => make_links_clickable($etapa["descricao"]),
                             'canaisDePrestacao' => array(
                                 'tipo'      => $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['tipo'],
                                 'descricao' => replace_link($etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao']),
@@ -283,8 +301,8 @@ function process_batch_scheduled($batch_siorg) {
                         'id'       => $dados_servico['id'],
                         'free'     => $dados_servico['gratuito'],
                         'sigla'    => $dados_servico['sigla'],
-                        'contact'  => $dados_servico['contato'],
-                        'description' => $dados_servico['descricao'],
+                        'contato'  => $dados_servico['contato'],
+                        'description' => replace_link($dados_servico['descricao']),
                         'linkService' => $dados_servico['linkServicoDigital'],
                         'nameFirstCategory' => $dados_servico['categoria']['categoriaSuperior']['categoriaSuperior']['nomeCategoria'],
                         'nameSecondCategory' => $dados_servico['categoria']['categoriaSuperior']['nomeCategoria'],

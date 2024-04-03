@@ -7,6 +7,29 @@ Version: 1.3
 Author: Ingleson
 */
 
+function paraphrase_text($text) {
+    $prompt = "Parafraseie o seguinte texto: \n\n$text";
+    $text_paraphrase = ask_chatgpt($prompt);
+    return $text_paraphrase;
+}
+
+function ask_chatgpt($prompt) {
+    $url = "https://api.openai.com/v1/completions";
+    $payload = array(
+        "model" => "text-davinci-003",
+        "prompt" => $prompt,
+        "max_tokens" => 100,
+        "temperature" => 0.7,
+        "top_p" => 1,
+        "n" => 1,
+        "stop" => ["\n"]
+    );
+    $headers = array(
+        "Content-Type: application/json",
+        "Authorization: Bearer "
+    );
+}
+
 function is_week_passed($last_execution_time) {
     $current_time = time();
     $one_week_seconds = 604800;
@@ -25,7 +48,25 @@ function replace_link($description) {
         return "<a href='{$matches[2]}'>[{$matches[1]}]</a>";
     }, $description);
 
+    if($description === null) {
+        return $description;
+    }
+
     return $description;
+}
+
+function make_links_clickable($text) {
+    $pattern = '/(https?:\/\/\S+)/i';
+
+    if (preg_match($pattern, $text)) {
+
+        $text = preg_replace_callback($pattern, function($matches) {
+            $url = esc_url($matches[0]);
+            return "<a href='$url'>$url</a>";
+        }, $text);
+    }
+
+    return $text;
 }
 
 function perform_actions() {
@@ -66,13 +107,13 @@ function perform_actions() {
                     
                         $etapas[] = array(
                             'titulo' => ($indice + 1) . '.' . $etapa["titulo"],
-                            'descricao' => $etapa['descricao'],
+                            'descricao' => make_links_clickable($etapa['descricao']),
                             'canaisDePrestacao' => array(
                                 'tipo'      => $etapa['canaisDePrestacao']['canaisDePrestacao'][0]['tipo'],
                                 'descricao' => replace_link($etapa['canaisDePrestacao']['canaisDePrestacao'][0]['descricao']),
                             ),
                             'documentos' => array(
-                                'documentos' => $documentos
+                                'documentos' => replace_link($documentos['nome']) 
                             ),
                             'custos' => array(
                                 'custos' => $custos
@@ -100,8 +141,8 @@ function perform_actions() {
                         'id'       => $dados_servico['id'],
                         'free'     => $dados_servico['gratuito'],
                         'sigla'    => $dados_servico['sigla'],
-                        'contact'  => $dados_servico['contato'],
-                        'description' => $dados_servico['descricao'],
+                        'contato'  => $dados_servico['contato'],
+                        'description' => replace_link($dados_servico['descricao']),
                         'linkService' => $dados_servico['linkServicoDigital'],
                         'nameFirstCategory' => $dados_servico['categoria']['categoriaSuperior']['categoriaSuperior']['nomeCategoria'],
                         'nameSecondCategory' => $dados_servico['categoria']['categoriaSuperior']['nomeCategoria'],
@@ -242,9 +283,8 @@ function perform_actions() {
                         <p class='is-free'>$is_free</p>
 
                         <h5>Para mais informações ou dúvidas sobre este serviço, entre em contato</h5>
-                        <p class='meta-contact'>$meta_contato</p>
 
-                        <p class='meta-name-link'>Este é um serviço do(a) $meta_name_organ. Em caso de duvidas, reclamações ou sugestões, favor, contactá-lo: $meta_link_organ</p>
+                        <p class='meta-name-link'>Este é um serviço do(a) $meta_name_organ. Em caso de duvidas, reclamações ou sugestões, favor, contactá-lo: $meta_contato</p>
 
                         <h5>Tratamento a ser dispensado ao usuário no atendimento</h5>
                         <p class='meta-require'>$no_require_treatment</p>
